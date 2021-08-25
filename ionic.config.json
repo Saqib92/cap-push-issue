@@ -1,5 +1,7 @@
 {
   "name": "pushIssue",
-  "integrations": {},
+  "integrations": {
+    "capacitor": {}
+  },
   "type": "angular"
 }
