@@ -1,7 +1,8 @@
 import { Injectable, NgZone } from '@angular/core';
-import { ActionPerformed, PushNotifications, PushNotificationSchema } from '@capacitor/push-notifications';
+import { ActionPerformed, PushNotifications, PushNotificationSchema, Token } from '@capacitor/push-notifications';
 import { FCM } from '@capacitor-community/fcm';
 import { Capacitor } from '@capacitor/core';
+
 
 @Injectable({
   providedIn: 'root'
@@ -24,7 +25,6 @@ export class FcmService {
 
   pushListener() {
     PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-      console.log('notification ' + JSON.stringify(notification));
       this.zone.run(() => {
         this.notifications.push(notification);
       });
@@ -32,7 +32,16 @@ export class FcmService {
 
     PushNotifications.addListener('pushNotificationActionPerformed',
       (action: ActionPerformed) => {
-        console.log('new notif action', action);
+        console.log(action)
+        if (action.notification.data.type == 'Post') {
+          this.zone.run(() => {
+            // Do you Stuff
+          });
+        }else if (action.notification.data.type == 'user') {
+          this.zone.run(() => {
+            // Do you Stuff
+          });
+        }
       }
     );
   }
@@ -40,13 +49,22 @@ export class FcmService {
   getToken() {
     if (Capacitor.getPlatform() !== 'web') {
       PushNotifications.requestPermissions().then((permission) => {
-        console.log(permission)
         if (permission.receive == "granted") {
           // Register with Apple / Google to receive push via APNS/FCM
-          FCM.getToken().then((result) => {
-            console.log('token from get token', result)
-            this.remoteToken = result.token;
-          }).catch((err) => console.log(err));
+          if(Capacitor.getPlatform() == 'ios'){
+            PushNotifications.register().then((res)=>{
+              console.log('From Regisiter Promise', res)
+            })
+            PushNotifications.addListener('registration', (token: Token)=>{            
+              FCM.getToken().then((result) => {
+                this.remoteToken = result.token;
+              }).catch((err) => console.log('i am Error' , err));
+            })
+          }else{
+            FCM.getToken().then((result) => {
+              this.remoteToken = result.token;
+            }).catch((err) => console.log('i am Error' , err));
+          }
         } else {
           // No permission for push granted
           alert('No Permission for Notifications!')
